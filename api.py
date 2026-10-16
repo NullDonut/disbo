@@ -1,5 +1,6 @@
 import aiohttp
 import aiosqlite
+from discord import user
 
 API_URL="https://graphql.anilist.co"
 
@@ -54,6 +55,14 @@ async def get_list(user_id):
                 "SELECT title,status FROM watchlist WHERE user_id = ?",(user_id,)
                 )
         return await cur.fetchall()
+async def remove_anime(user_id,title):
+    async with aiosqlite.connect(DB) as db:
+        cur = await db.execute(
+                "DELETE from watchlist where user_id=? and title = ? collate nocase",
+                (user_id,title)
+                )
+        await db.commit()
+        return cur.rowcount
 async def search_anime(query):
     payload = {"query":QUERY,"variables":{"search":query}}
     try:

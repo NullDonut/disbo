@@ -3,7 +3,7 @@ from warnings import resetwarnings
 import discord
 import random
 import os
-from api import init_db, search_anime, add_anime,get_list
+from api import init_db, remove_anime, search_anime, add_anime,get_list
 from dotenv import load_dotenv
 
 from discord import app_commands, channel
@@ -90,6 +90,15 @@ async def show_list(interaction:discord.Interaction):
         color=0x3DB4F2,
     )
     await interaction.response.send_message(embed=embed)
+
+@tree.command(name="remove",description="Remove an anime from your list")
+@app_commands.describe(title="Exact title as shown in /list")
+async def remove(interaction:discord.Interaction,title:str):
+    count = await remove_anime(interaction.user.id,title)
+    if count:
+        await interaction.response.send_message(f"Removed **{title}**.")
+    else:
+        await interaction.response.send_message('That title isn\'t on your list.')
 
 @tree.error
 async def on_app_command_error(interaction :discord.Interaction,error:app_commands.AppCommandError):
