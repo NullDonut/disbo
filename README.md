@@ -21,6 +21,7 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 * Create '.env' containing 'TOKEN=your_bot_token'
 * Run 'python main.py'
 * Invite it with the OAuth2 URL (scopes 'bot' and 'application.commands').
+* Only permissions the bot needs are "Send Messages" and "Allow Link Embeds"
 
 ## Basic info and overview
 
