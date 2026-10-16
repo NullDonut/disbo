@@ -1,5 +1,6 @@
 from warnings import resetwarnings
 
+from aiosqlite.context import Result
 import discord
 import random
 import os
@@ -13,6 +14,53 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+
+def make_embed(a):
+    name = a["title"]["english"] or a["title"]["romaji"]
+    desc  = (a["description"] or "No synopsis.").replace("<br>","").replace("<i>","").replace("</i>","")
+    if len(desc) > 300:
+        desc = desc[:300].rsplit(" ",1)[0] + "..."
+    desc  = desc.split("(Source")[0].strip()
+    score = f"{a['averageScore']/ 10:.1f}/10" if a["averageScore"] else "N/A"
+    embed = discord.Embed(title=name,url=a["siteUrl"],description=desc,color=0x3DB4F2)
+    embed.set_thumbnail(url=a["coverImage"]["large"])
+    embed.add_field(name="Score",value=score)
+    embed.add_field(name="Episodes",value=a["episodes"] or "N/A")
+    embed.add_field(name="Status",value=a["status"].replace("_"," ").title()) 
+    return embed
+
+class ResultPicker(discord.ui.View):
+    def __init__(self,results,author_id):
+        super().__init__(timeout=120)
+        self.results = results
+        self.author_id = author_id
+        self.message = None
+
+        options = [
+                discord.SelectOption(
+                    label=(a["title"]["english"] or a["title"]["romaji"])[:100],
+                    value=str(i),
+                    )
+                for i, a in enumerate(results)
+                ]
+        select = discord.ui.Select(placeholder="Pick a result",options=options)
+        select.callback = self.on_select
+        self.add_item(select)
+    async def on_select(self,interaction:discord.Interaction):
+        i = int(interaction.data["values"][0])
+        await interaction.response.edit_message(embed=make_embed(self.results[i]))
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message(
+                    "This isn't your search.Run /search yourself.",ephemeral = True
+                    )
+            return False
+        return True
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        if self.message:
+            await self.message.edit(view=self)
 
 @client.event
 async def on_ready():
@@ -39,19 +87,8 @@ async def search(interaction:discord.Interaction,name:str="Naruto"):
     if not results:
         await interaction.followup.send("No results found or anime service down")
         return
-    a = results[0]
-    name = a["title"]["english"] or a["title"]["romaji"]
-    desc  = (a["description"] or "No synopsis.").replace("<br>","").replace("<i>","").replace("</i>","")
-    if len(desc) > 300:
-        desc = desc[:300].rsplit(" ",1)[0] + "..."
-    desc  = desc.split("(Source")[0].strip()
-    score = f"{a['averageScore']/ 10:.1f}/10" if a["averageScore"] else "N/A"
-    embed = discord.Embed(title=name,url=a["siteUrl"],description=desc,color=0x3DB4F2)
-    embed.set_thumbnail(url=a["coverImage"]["large"])
-    embed.add_field(name="Score",value=score)
-    embed.add_field(name="Episodes",value=a["episodes"] or "N/A")
-    embed.add_field(name="Status",value=a["status"].replace("_"," ").title())
-    await interaction.followup.send(embed=embed)
+    view = ResultPicker(results,interaction.user.id)
+    view.message = await interaction.followup.send(embed=make_embed(results[0]),view=view)
 
 @tree.command(name="add",description="Add a anime to list")
 @app_commands.describe(name="Title name",status="Current status")
