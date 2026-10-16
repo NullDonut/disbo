@@ -1,3 +1,4 @@
+from sqlite3 import connect
 from warnings import resetwarnings
 
 from aiosqlite.context import Result
@@ -61,7 +62,23 @@ class ResultPicker(discord.ui.View):
             item.disabled = True
         if self.message:
             await self.message.edit(view=self)
+class AddPicker(ResultPicker):
+    def __init__(self,results,author_id,status):
+        super().__init__(results,author_id)
+        self.status = status
+    async def on_select(self, interaction: discord.Interaction):
+        i = int(interaction.data["values"][0])
+        a = self.results[i]
+        title = a["title"]["english"] or a["title"]["romaji"]
 
+        await add_anime(interaction.user.id,a["id"],title,self.status.value)
+
+        await interaction.response.edit_message(
+                content = f"Added **{title}** as *{self.status.name}*.",
+                embed=None,
+                view=None,
+                )
+        self.stop()
 @client.event
 async def on_ready():
     await init_db()
@@ -103,11 +120,12 @@ async def add_to_list(interaction:discord.Interaction,name:str,status:app_comman
     if not results:
         await interaction.followup.send("No results found.")
         return
-    a = results[0]
-    title = a["title"]["english"] or a["title"]["romaji"]
 
-    await add_anime(interaction.user.id,a["id"],title,status.value)
-    await interaction.followup.send(f"Added **{title}** as *{status.name}*.")
+    view = AddPicker(results,interaction.user.id,status)
+    view.message = await interaction.followup.send(
+            "Which one do you want to add?",embed=make_embed(results[0]),view=view
+            )
+
 
 
 STATUS_LABELS = {"planning":"Plan to watch","watching":"Watching","completed":"Completed"}

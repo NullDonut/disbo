@@ -15,10 +15,36 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 | '/list' | Show your watchlist|
 | '/remove <title>'| Removes a show from your list |
 
+![Adding a show](./screenshots/add.jpg)
+
+
+
+![Your list](./screenshots/)
+
+## Permissions
+Disbo asks for as little as possible:
+
+- **Scopes:** `bot` and `applications.commands`
+- **Bot permissions:** Send Messages,Embed Links
+- **Intents:** none beyond the default.It does **not** read message content.
+
+## Data Stored
+Only your Discord user ID,the shows you add (Anilist ID and title) and their status,in a server side sqlite database.No messages stored whatsover
+
 ## Run your own copy
 * Create a app at Discord developer portal and add a bot user.
-* Clone this repository and run 'pip install -r requirements.txt'.
-* Create '.env' containing 'TOKEN=your_bot_token'
+* Clone this repository:
+```
+git clone https://github.com/nulldonut/disbo.git/
+```
+* Install Directory: 
+```
+pip install -r requirements.txt
+```
+* Create '.env' containing 
+```
+TOKEN=your_bot_token
+```
 * Run 'python main.py'
 * Invite it with the OAuth2 URL (scopes 'bot' and 'application.commands').
 * Only permissions the bot needs are "Send Messages" and "Allow Link Embeds"
@@ -28,3 +54,12 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 It uses discord.py as discord handler.It fetches content from anilist official graphql api.All personal watchlist are stored differently in a single sqlite database (server side).
 It used async libraries (aiosqlite,aiohttp) for efficient and fast backend.
 It is hosted on a public hacker lab (nest) instance ;)
+
+
+## Roadmap
+- Movies via TMDB
+- `/rate` and scores in `/list`
+- Paginated `/list`
+
+## Credits
+Anime data from anilist. Built for Hack Club Crescent.
