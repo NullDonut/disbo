@@ -1,7 +1,9 @@
+from warnings import resetwarnings
+
 import discord
 import random
 import os
-from api import search_anime
+from api import init_db, search_anime, add_anime,get_list
 from dotenv import load_dotenv
 
 from discord import app_commands, channel
@@ -14,6 +16,7 @@ tree = app_commands.CommandTree(client)
 
 @client.event
 async def on_ready():
+    await init_db()
     await tree.sync()
     print(f"We have logged in as {client.user}")
 
@@ -21,41 +24,10 @@ async def on_ready():
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong!")
 
-## Kick command implementation
-#@tree.command(name="kick",description="Kicks a user")
-#@app_commands.guild_only()
-
-#@app_commands.describe(member ="Who to kick",reason = "why")
-#async def kick(interaction:discord.Interaction,member:discord.Member,reason:str = "No reason"):
-#    author = interaction.user
-#    if not isinstance(author,discord.Member):
-#       return
-#    if(member.top_role < author.top_role):
-#        await member.kick(reason=reason)
-#        await interaction.response.send_message(f"Kicked: {member.mention}")
-#   else:
-#       await interaction.response.send_message(f"You don't have permission to run this command")
-
 @tree.command(name="roll",description="Roll the dice")
 async def roll(interaction: discord.Interaction):
     n = random.randrange(1,7)
     await interaction.response.send_message(f"You rolled a {n}!")
-
-@tree.command(name="purge",description="Delete recent messages")
-@app_commands.guild_only()
-@app_commands.checks.has_permissions(manage_messages=True)
-@app_commands.checks.cooldown(1,5.0)
-@app_commands.describe(amount = "How many recent messages to bulk delete (1-100)")
-@app_commands.checks.bot_has_permissions(manage_messages=True)
-async def purge(interaction: discord.Interaction,amount:app_commands.Range[int ,1,100]):
-    channel = interaction.channel
-    if not isinstance(channel, (discord.TextChannel , discord.Thread , discord.VoiceChannel)):
-        await interaction.response.send_message("Can't purge here.",ephemeral=True)
-        return
-    await interaction.response.defer(ephemeral=True)
-    deleted = await interaction.channel.purge(limit=amount)
-    await interaction.followup.send(f"Deleted {len(deleted)} messages.",ephemeral=True)
-
 
 
 @tree.command(name="search",description="Search anime")
@@ -80,6 +52,44 @@ async def search(interaction:discord.Interaction,name:str="Naruto"):
     embed.add_field(name="Episodes",value=a["episodes"] or "N/A")
     embed.add_field(name="Status",value=a["status"].replace("_"," ").title())
     await interaction.followup.send(embed=embed)
+
+@tree.command(name="add",description="Add a anime to list")
+@app_commands.describe(name="Title name",status="Current status")
+@app_commands.choices(status=[
+    app_commands.Choice(name="Plan to watch",value="planning"),
+    app_commands.Choice(name="Completed",value="completed"),
+    app_commands.Choice(name="Watching",value="watching")
+    ])
+async def add_to_list(interaction:discord.Interaction,name:str,status:app_commands.Choice[str]):
+    await interaction.response.defer()
+    results = await search_anime(name)
+    if not results:
+        await interaction.followup.send("No results found.")
+        return
+    a = results[0]
+    title = a["title"]["english"] or a["title"]["romaji"]
+
+    await add_anime(interaction.user.id,a["id"],title,status.value)
+    await interaction.followup.send(f"Added **{title}** as *{status.name}*.")
+
+
+STATUS_LABELS = {"planning":"Plan to watch","watching":"Watching","completed":"Completed"}
+@tree.command(name="list",description="Show your anime list")
+async def show_list(interaction:discord.Interaction):
+    rows = await get_list(interaction.user.id)
+    if not rows:
+        await interaction.response.send_message("Your list is empty. Use /add to add Something.",ephemeral=True)
+        return
+    lines = [f"• **{title}** — {STATUS_LABELS.get(status, status)}" for title, status in rows[:20]]
+    if len(rows) > 20:
+        lines.append(f"...and {len(rows) - 20} more")
+
+    embed = discord.Embed(
+        title=f"{interaction.user.display_name}'s list",
+        description="\n".join(lines),
+        color=0x3DB4F2,
+    )
+    await interaction.response.send_message(embed=embed)
 
 @tree.error
 async def on_app_command_error(interaction :discord.Interaction,error:app_commands.AppCommandError):
