@@ -15,12 +15,11 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 | '/list' | Show your watchlist|
 | '/remove <title>'| Removes a show from your list |
 
-![Adding a show](./screenshots/add.jpg)
-
-
-
-![Your list](./screenshots/)
-
+<p align="center">
+<img src="screenshots/add.jpg",alt="Selecing a show",width="300">
+<img src="screenshots/add2.jpg",alt="Adding a show",width="300">
+<img src="screenshots/list.jpg",alt="Listing the watchlist",width="300">
+</p>
 ## Permissions
 Disbo asks for as little as possible:
 
