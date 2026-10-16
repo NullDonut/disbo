@@ -3,7 +3,7 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 
 
 [Add disbo to your server](https://discord.com/oauth2/authorize?client_id=1560541350682689577&permissions=18432&integration_type=0&scope=bot)
-[Try it in this demo server](https://discord.gg/4vqSBCafa)
+[Try it in this demo server](https://discord.gg/3pBD6mjeRv)
 
 ![search demo](./screenshots/search.jpg)
 
