@@ -1,6 +1,7 @@
 import discord
 import random
 import os
+from api import search_anime
 from dotenv import load_dotenv
 
 from discord import app_commands, channel
@@ -57,6 +58,28 @@ async def purge(interaction: discord.Interaction,amount:app_commands.Range[int ,
 
 
 
+@tree.command(name="search",description="Search anime")
+@app_commands.checks.cooldown(1,5.0)
+@app_commands.describe(name="Title name")
+async def search(interaction:discord.Interaction,name:str="Naruto"):
+    await interaction.response.defer()
+    results = await search_anime(name)
+    if not results:
+        await interaction.followup.send("No results found or anime service down")
+        return
+    a = results[0]
+    name = a["title"]["english"] or a["title"]["romaji"]
+    desc  = (a["description"] or "No synopsis.").replace("<br>","").replace("<i>","").replace("</i>","")
+    if len(desc) > 300:
+        desc = desc[:300].rsplit(" ",1)[0] + "..."
+    desc  = desc.split("(Source")[0].strip()
+    score = f"{a['averageScore']/ 10:.1f}/10" if a["averageScore"] else "N/A"
+    embed = discord.Embed(title=name,url=a["siteUrl"],description=desc,color=0x3DB4F2)
+    embed.set_thumbnail(url=a["coverImage"]["large"])
+    embed.add_field(name="Score",value=score)
+    embed.add_field(name="Episodes",value=a["episodes"] or "N/A")
+    embed.add_field(name="Status",value=a["status"].replace("_"," ").title())
+    await interaction.followup.send(embed=embed)
 
 @tree.error
 async def on_app_command_error(interaction :discord.Interaction,error:app_commands.AppCommandError):
@@ -80,7 +103,6 @@ async def on_app_command_error(interaction :discord.Interaction,error:app_comman
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-print("Bot token used is:",BOT_TOKEN)
 if BOT_TOKEN == None:
     print("error occured")
     exit(1)
