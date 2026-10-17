@@ -12,10 +12,10 @@ A discord bot to search anime and keep a personal watchlist, right in your serve
 ## Commands
 | Command | What it does |
 |---------|--------------|
-| '/search <title>' | Show cover,score,episodes,status and synopsis|
-| '/add <title> <status>' | Saves a show as Plan to watch,Watching or completed|
-| '/list' | Show your watchlist|
-| '/remove <title>'| Removes a show from your list |
+| `/search <title>` | Show cover,score,episodes,status and synopsis|
+| `/add <title> <status>` | Saves a show as Plan to watch,Watching or completed|
+| `/list` | Show your watchlist|
+| `/remove <title>`| Removes a show from your list |
 
 
 ## Image Gallery
@@ -49,7 +49,10 @@ pip install -r requirements.txt
 ```
 TOKEN=your_bot_token
 ```
-* Run 'python main.py'
+* Run
+```
+ python main.py
+ ```
 * Invite it with the OAuth2 URL (scopes 'bot' and 'application.commands').
 * Only permissions the bot needs are "Send Messages" and "Allow Link Embeds"
 
